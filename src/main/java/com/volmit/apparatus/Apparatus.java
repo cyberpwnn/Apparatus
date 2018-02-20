@@ -25,7 +25,6 @@ import net.dv8tion.jda.core.hooks.EventListener;
 
 public class Apparatus implements EventListener
 {
-	public static long ms = M.ms() + 100000;
 	private JDA jda;
 	private GMap<Guild, ServerData> data;
 
@@ -43,8 +42,6 @@ public class Apparatus implements EventListener
 	@Override
 	public void onEvent(Event event)
 	{
-		System.out.println("Event: " + event.getClass().getSimpleName());
-
 		if(event instanceof GuildMessageDeleteEvent)
 		{
 			GuildMessageDeleteEvent e = (GuildMessageDeleteEvent) event;
