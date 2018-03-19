@@ -1,12 +1,21 @@
 package com.volmit.apparatus;
 
 import java.awt.Color;
+import java.io.IOException;
 
 import javax.security.auth.login.LoginException;
 
 import org.cyberpwn.gformat.F;
+import org.cyberpwn.glang.GList;
 import org.cyberpwn.glang.GMap;
 import org.cyberpwn.gmath.M;
+
+import com.volmit.apparatus.command.CommandBanish;
+import com.volmit.apparatus.command.CommandCalc;
+import com.volmit.apparatus.command.CommandConfig;
+import com.volmit.apparatus.command.CommandPardon;
+import com.volmit.apparatus.command.CommandReboot;
+import com.volmit.apparatus.command.CommandUser;
 
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.EmbedBuilder;
@@ -27,11 +36,22 @@ public class Apparatus implements EventListener
 {
 	private JDA jda;
 	private GMap<Guild, ServerData> data;
+	private GList<ICommand> cmd;
+	public static Apparatus inst;
 
-	public Apparatus(AuthSet auth) throws LoginException, IllegalArgumentException, InterruptedException, RateLimitedException
+	public Apparatus(AuthSet auth) throws LoginException, IllegalArgumentException, InterruptedException, RateLimitedException, ClassNotFoundException, IOException
 	{
 		jda = new JDABuilder(AccountType.BOT).setToken(auth.getToken()).addEventListener(this).buildBlocking();
 		data = new GMap<Guild, ServerData>();
+		cmd = new GList<ICommand>();
+		inst = this;
+		cmd.add(new CommandConfig());
+		cmd.add(new CommandUser());
+		cmd.add(new CommandBanish());
+		cmd.add(new CommandPardon());
+		cmd.add(new CommandReboot());
+		cmd.add(new CommandCalc());
+		Config.load();
 	}
 
 	public JDA getJDA()
@@ -76,7 +96,7 @@ public class Apparatus implements EventListener
 				b.setDescription(content);
 				b.addField("Author", member != null ? member.getAsMention() : "No longer here.", true);
 				b.addField("Deleted", F.time(M.ms() - mv.getAt(), 0) + " ago", true);
-				channel.sendMessage(b.build()).queue();
+				channel.getGuild().getTextChannelById(Config.i.STAFF_CHANNEL).sendMessage(b.build()).queue();
 			}
 		}
 
@@ -92,6 +112,33 @@ public class Apparatus implements EventListener
 			}
 
 			getData(g).saveMessage(m);
+
+			if(m.getContent().startsWith("/"))
+			{
+				String command = m.getContent().substring(1);
+
+				for(ICommand i : cmd)
+				{
+					for(String j : i.getRoot())
+					{
+						if(command.toLowerCase().startsWith(j))
+						{
+							String s = command.replace(j, "").trim();
+							String[] a = s.split(" ");
+
+							if(a.length == 1 && a[0].trim().equalsIgnoreCase(""))
+							{
+								a = new String[0];
+							}
+
+							m.addReaction("⛏").queue();
+							i.onCommand(a, g, c, m);
+							m.clearReactions().queue();
+							return;
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -100,7 +147,17 @@ public class Apparatus implements EventListener
 		if(!data.containsKey(g))
 		{
 			ServerData ss = new ServerData(g);
-			ss.read();
+
+			try
+			{
+				ss.read();
+			}
+
+			catch(IOException e)
+			{
+				e.printStackTrace();
+			}
+
 			data.put(g, ss);
 		}
 
@@ -133,6 +190,16 @@ public class Apparatus implements EventListener
 
 		catch(LoginException | IllegalArgumentException | InterruptedException | RateLimitedException e)
 		{
+			e.printStackTrace();
+		}
+		catch(ClassNotFoundException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch(IOException e)
+		{
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
