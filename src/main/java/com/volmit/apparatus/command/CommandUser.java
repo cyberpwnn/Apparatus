@@ -58,20 +58,26 @@ public class CommandUser extends CommandBase
 				v = v / 60;
 				su = " hour";
 
-				if(v / 7 > 0)
+				if(v / 24 > 0)
 				{
-					v = v / 7;
-					su = " week";
+					v = v / 24;
+					su = " day";
 
-					if(v / 4 > 0)
+					if(v / 7 > 0)
 					{
-						v = v / 4;
-						su = " month";
+						v = v / 7;
+						su = " week";
 
-						if(v / 12 > 0)
+						if(v / 4 > 0)
 						{
-							v = v / 12;
-							su = " year";
+							v = v / 4;
+							su = " month";
+
+							if(v / 12 > 0)
+							{
+								v = v / 12;
+								su = " year";
+							}
 						}
 					}
 				}
